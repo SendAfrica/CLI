@@ -1,0 +1,17 @@
+# Secrets - NEVER commit
+.env
+.env.*
+!.env.example
+
+# Binary
+sendafrica
+bin/
+*.exe
+
+# Go build cache
+vendor/
+
+# IDE
+.idea/
+.vscode/
+*.swp
