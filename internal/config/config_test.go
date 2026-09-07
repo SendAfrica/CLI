@@ -142,10 +142,17 @@ func TestResolveNoCredentials(t *testing.T) {
 func TestResolveProfileNotFound(t *testing.T) {
 	t.Setenv("HOME", t.TempDir())
 
-	// No profiles saved
-	_, err := Resolve("nonexistent", "", "", "", "")
-	if err == nil {
-		t.Fatal("expected error for nonexistent profile")
+	// No profiles saved. Resolve should NOT error — it falls through with
+	// empty values so env vars / flags can still provide credentials.
+	resolved, err := Resolve("nonexistent", "", "", "", "")
+	if err != nil {
+		t.Fatalf("Resolve should not error for missing profile: %v", err)
+	}
+	if resolved.ProfileName != "nonexistent" {
+		t.Errorf("expected profile name 'nonexistent', got %s", resolved.ProfileName)
+	}
+	if resolved.APIKey != "" {
+		t.Error("expected no API key from a nonexistent profile")
 	}
 }
 

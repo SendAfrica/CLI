@@ -4,6 +4,8 @@ import (
 	"encoding/json"
 	"fmt"
 	"strings"
+
+	"github.com/cameltech/sendafrica-cli/internal/api"
 )
 
 // decodeData unmarshals json.RawMessage into the target.
@@ -15,6 +17,33 @@ func decodeData(data json.RawMessage, target interface{}) error {
 		return fmt.Errorf("decoding response: %w", err)
 	}
 	return nil
+}
+
+// decodePaginated unmarshals a paginated API response, extracting the items
+// array into target. The raw data is expected to be an object like
+// {"items": [...], "page": 1, "total": 42}.
+func decodePaginated(data json.RawMessage, target interface{}) (api.PaginatedResponse, error) {
+	var page api.PaginatedResponse
+	if err := json.Unmarshal(data, &page); err != nil {
+		return page, fmt.Errorf("decoding paginated response: %w", err)
+	}
+	if err := page.ExtractItems(target); err != nil {
+		return page, fmt.Errorf("extracting items: %w", err)
+	}
+	return page, nil
+}
+
+// decodeListOrPaginated tries a bare-array decode first, then falls back to
+// a paginated {items: [...]} decode. This handles APIs where some list
+// endpoints return arrays and others return paginated objects.
+func decodeListOrPaginated(data json.RawMessage, target interface{}) error {
+	// Try bare array first.
+	if err := json.Unmarshal(data, target); err == nil {
+		return nil
+	}
+	// Fall back to paginated object.
+	_, err := decodePaginated(data, target)
+	return err
 }
 
 // rawMessage converts json.RawMessage to a generic interface{} for printing.

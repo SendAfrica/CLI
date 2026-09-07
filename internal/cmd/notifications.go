@@ -43,7 +43,7 @@ var notificationsListCmd = &cobra.Command{
 			return err
 		}
 		var result []api.Notification
-		if err := decodeData(data, &result); err != nil {
+		if _, err := decodePaginated(data, &result); err != nil {
 			return err
 		}
 		return printer().Print(result)

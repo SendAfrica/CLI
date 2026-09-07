@@ -155,7 +155,10 @@ func Resolve(profileName, apiURL, apiKey, jwtToken, format string) (*ResolvedCon
 
 	profile, exists := cfg.Profiles[profileName]
 	if !exists {
-		return nil, fmt.Errorf("profile %q not found; create it with %s config add-profile", profileName, os.Args[0])
+		// No profile on disk — don't error; fall through with empty values
+		// so env vars and flags can still provide credentials. The caller
+		// (apiClient/ensureAuth) will reject if neither is present.
+		profile = Profile{}
 	}
 
 	// Start with profile values, then overlay env vars, then flags.

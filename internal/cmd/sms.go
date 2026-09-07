@@ -123,7 +123,7 @@ var smsLogsCmd = &cobra.Command{
 		}
 
 		var result []api.SMSLog
-		if err := decodeData(data, &result); err != nil {
+		if _, err := decodePaginated(data, &result); err != nil {
 			return err
 		}
 		return printer().Print(result)
@@ -186,7 +186,7 @@ var creditsHistoryCmd = &cobra.Command{
 			return err
 		}
 		var result []api.Transaction
-		if err := decodeData(data, &result); err != nil {
+		if _, err := decodePaginated(data, &result); err != nil {
 			return err
 		}
 		return printer().Print(result)

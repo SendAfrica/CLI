@@ -7,18 +7,25 @@ import (
 
 	"github.com/cameltech/sendafrica-cli/internal/api"
 	"github.com/cameltech/sendafrica-cli/internal/client"
+	"github.com/cameltech/sendafrica-cli/internal/config"
 	"github.com/cameltech/sendafrica-cli/internal/output"
 )
+
+// publicClient creates a client for public endpoints that don't require auth.
+func publicClient() *client.Client {
+	apiURL := config.DefaultAPIURL
+	if resolvedCfg != nil && resolvedCfg.APIURL != "" {
+		apiURL = resolvedCfg.APIURL
+	}
+	return client.New(apiURL, "", "")
+}
 
 var healthCmd = &cobra.Command{
 	Use:   "health",
 	Short: "Check API server health",
 	Args:  cobra.NoArgs,
 	RunE: func(cmd *cobra.Command, args []string) error {
-		c, err := apiClient()
-		if err != nil {
-			return err
-		}
+		c := publicClient()
 
 		resp, env, err := c.DoWithResponse(client.RequestOpts{
 			Method: "GET",
@@ -54,10 +61,7 @@ var packagesCmd = &cobra.Command{
 	Short: "List active credit packages (public)",
 	Args:  cobra.NoArgs,
 	RunE: func(cmd *cobra.Command, args []string) error {
-		c, err := apiClient()
-		if err != nil {
-			return err
-		}
+		c := publicClient()
 		data, err := c.Do(client.RequestOpts{Method: "GET", Path: "/v1/packages"})
 		if err != nil {
 			return err
@@ -76,10 +80,7 @@ var templatesCmd = &cobra.Command{
 	Short: "List active SMS templates (public)",
 	Args:  cobra.NoArgs,
 	RunE: func(cmd *cobra.Command, args []string) error {
-		c, err := apiClient()
-		if err != nil {
-			return err
-		}
+		c := publicClient()
 		data, err := c.Do(client.RequestOpts{Method: "GET", Path: "/v1/templates"})
 		if err != nil {
 			return err
@@ -98,10 +99,7 @@ var ratesCmd = &cobra.Command{
 	Short: "List supported-country SMS rate card (public)",
 	Args:  cobra.NoArgs,
 	RunE: func(cmd *cobra.Command, args []string) error {
-		c, err := apiClient()
-		if err != nil {
-			return err
-		}
+		c := publicClient()
 
 		country, _ := cmd.Flags().GetString("country")
 		path := "/v1/rates"

@@ -33,7 +33,7 @@ var contactsListCmd = &cobra.Command{
 			return err
 		}
 		var result []api.ContactList
-		if err := decodeData(data, &result); err != nil {
+		if err := decodeListOrPaginated(data, &result); err != nil {
 			return err
 		}
 		return printer().Print(result)
@@ -137,7 +137,7 @@ var contactsDuplicateCheckCmd = &cobra.Command{
 		if err != nil {
 			return err
 		}
-		var result []api.DuplicateEntry
+		var result api.DuplicateCheckResponse
 		if err := decodeData(data, &result); err != nil {
 			return err
 		}
@@ -246,7 +246,7 @@ var contactsListContactsCmd = &cobra.Command{
 			return err
 		}
 		var result []api.Contact
-		if err := decodeData(data, &result); err != nil {
+		if _, err := decodePaginated(data, &result); err != nil {
 			return err
 		}
 		return printer().Print(result)

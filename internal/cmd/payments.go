@@ -75,7 +75,7 @@ var vouchersRateCmd = &cobra.Command{
 		if err != nil {
 			return err
 		}
-		var result []api.VoucherRate
+		var result api.VoucherRateResponse
 		if err := decodeData(data, &result); err != nil {
 			return err
 		}

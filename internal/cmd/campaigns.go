@@ -43,7 +43,7 @@ var campaignsListCmd = &cobra.Command{
 			return err
 		}
 		var result []api.Campaign
-		if err := decodeData(data, &result); err != nil {
+		if _, err := decodePaginated(data, &result); err != nil {
 			return err
 		}
 		return printer().Print(result)
@@ -256,7 +256,7 @@ var campaignsRecipientsCmd = &cobra.Command{
 			return err
 		}
 		var result []api.CampaignRecipient
-		if err := decodeData(data, &result); err != nil {
+		if _, err := decodePaginated(data, &result); err != nil {
 			return err
 		}
 		return printer().Print(result)

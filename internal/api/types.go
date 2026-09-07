@@ -1,6 +1,26 @@
 // Package api defines the request/response types for the SendAfrica API.
 package api
 
+import "encoding/json"
+
+// PaginatedResponse wraps list endpoints that return {items, page, per_page, total, total_pages}.
+type PaginatedResponse struct {
+	Items      json.RawMessage `json:"items"`
+	Page       int             `json:"page"`
+	PerPage    int             `json:"per_page"`
+	Total      int             `json:"total"`
+	TotalPages int             `json:"total_pages"`
+	Count      int             `json:"count,omitempty"`
+}
+
+// ExtractItems unmarshals the Items field into the provided slice.
+func (p PaginatedResponse) ExtractItems(target interface{}) error {
+	if len(p.Items) == 0 {
+		return nil
+	}
+	return json.Unmarshal(p.Items, target)
+}
+
 // Auth types
 
 type RegisterRequest struct {
@@ -100,14 +120,14 @@ type SMSSendRequest struct {
 }
 
 type SMSResponse struct {
-	ID         string `json:"id" table:"id"`
-	Status     string `json:"status" table:"status"`
-	To         string `json:"to" table:"to"`
-	From       string `json:"from,omitempty" table:"from"`
-	Message    string `json:"message,omitempty" table:"message"`
-	Cost       int    `json:"cost,omitempty" table:"cost"`
-	ProviderID string `json:"provider_id,omitempty" table:"provider_id"`
-	CreatedAt  string `json:"created_at" table:"created_at"`
+	ID          string `json:"id" table:"id"`
+	Status      string `json:"status" table:"status"`
+	To          string `json:"to_phone" table:"to"`
+	From        string `json:"from_id" table:"from"`
+	Message     string `json:"message,omitempty" table:"message"`
+	Cost        int    `json:"credits_used,omitempty" table:"cost"`
+	GatewayCode string `json:"gateway_code,omitempty" table:"gateway_code"`
+	CreatedAt   string `json:"created_at" table:"created_at"`
 }
 
 type SMSBulkSendRequest struct {
@@ -118,14 +138,15 @@ type SMSBulkSendRequest struct {
 }
 
 type SMSLog struct {
-	ID         string `json:"id" table:"id"`
-	Status     string `json:"status" table:"status"`
-	To         string `json:"to" table:"to"`
-	From       string `json:"from,omitempty" table:"from"`
-	Message    string `json:"message,omitempty" table:"message"`
-	Cost       int    `json:"cost,omitempty" table:"cost"`
-	ProviderID string `json:"provider_id,omitempty" table:"provider_id"`
-	CreatedAt  string `json:"created_at" table:"created_at"`
+	ID           string `json:"id" table:"id"`
+	Status       string `json:"status" table:"status"`
+	To           string `json:"to_phone" table:"to"`
+	From         string `json:"from_id" table:"from"`
+	Message      string `json:"message" table:"message"`
+	Cost         int    `json:"credits_used" table:"cost"`
+	DeliveredAt  string `json:"delivered_at,omitempty" table:"delivered_at"`
+	GatewayCode  string `json:"gateway_code,omitempty" table:"gateway_code"`
+	CreatedAt    string `json:"created_at" table:"created_at"`
 }
 
 type SMSLogsResponse struct {
@@ -145,7 +166,8 @@ type Transaction struct {
 	ID          string `json:"id" table:"id"`
 	Type        string `json:"type" table:"type"`
 	Amount      int    `json:"amount" table:"amount"`
-	Balance     int    `json:"balance,omitempty" table:"balance"`
+	Balance     int    `json:"balance_after" table:"balance"`
+	Status      string `json:"status,omitempty" table:"status"`
 	Description string `json:"description,omitempty" table:"description"`
 	CreatedAt   string `json:"created_at" table:"created_at"`
 }
@@ -176,10 +198,10 @@ type SMSTemplate struct {
 }
 
 type Rate struct {
-	Country     string `json:"country" table:"country"`
-	CallingCode string `json:"calling_code" table:"calling_code"`
-	PricePerSMS int    `json:"price_per_sms" table:"price_per_sms"`
-	Currency    string `json:"currency" table:"currency"`
+	Country     string `json:"name" table:"country"`
+	Iso2        string `json:"iso2" table:"iso2"`
+	CallingCode string `json:"dial_code" table:"calling_code"`
+	RateTZS     int    `json:"rate_tzs" table:"rate_tzs"`
 }
 
 // Contacts types
@@ -202,12 +224,8 @@ type UpdateContactListRequest struct {
 }
 
 type DuplicateCheckResponse struct {
-	Duplicates []DuplicateEntry `json:"duplicates" table:"-"`
-}
-
-type DuplicateEntry struct {
-	Phone string `json:"phone" table:"phone"`
-	Count int    `json:"count" table:"count"`
+	DuplicateCount    int `json:"duplicate_count" table:"duplicate_count"`
+	ListContactCount  int `json:"list_contact_count" table:"list_contact_count"`
 }
 
 type Contact struct {
@@ -318,9 +336,14 @@ type PaymentResponse struct {
 
 // Vouchers types
 
-type VoucherRate struct {
-	Tier string `json:"tier" table:"tier"`
-	Rate int    `json:"rate" table:"rate"`
+type VoucherRateResponse struct {
+	MinAmountTZS int            `json:"min_amount_tzs" table:"min_amount_tzs"`
+	Tiers        []VoucherTier `json:"tiers" table:"-"`
+}
+
+type VoucherTier struct {
+	MaxAmountTZS      int `json:"max_amount_tzs" table:"max_amount_tzs"`
+	RateTZSPerCredit  int `json:"rate_tzs_per_credit" table:"rate_tzs_per_credit"`
 }
 
 type PurchaseVoucherRequest struct {
@@ -362,16 +385,23 @@ type SenderIDDocument struct {
 }
 
 type SenderID struct {
-	ID              string `json:"id" table:"id"`
-	Name            string `json:"name" table:"name"`
-	Country         string `json:"country,omitempty" table:"country"`
-	Purpose         string `json:"purpose,omitempty" table:"purpose"`
-	SampleMessage   string `json:"sample_message,omitempty" table:"sample_message"`
-	Status          string `json:"status" table:"status"`
-	IsUsable        bool   `json:"is_usable" table:"is_usable"`
+	ID             string `json:"id,omitempty" table:"id"`
+	Name           string `json:"name" table:"name"`
+	Country        string `json:"country,omitempty" table:"country"`
+	Purpose        string `json:"purpose,omitempty" table:"purpose"`
+	SampleMessage  string `json:"sample_message,omitempty" table:"sample_message"`
+	Status         string `json:"status,omitempty" table:"status"`
+	IsUsable       bool   `json:"is_usable,omitempty" table:"is_usable"`
 	RejectionReason string `json:"rejection_reason,omitempty" table:"rejection_reason"`
-	CreditsCharged  int    `json:"credits_charged,omitempty" table:"credits_charged"`
-	CreatedAt       string `json:"created_at" table:"created_at"`
+	CreditsCharged int    `json:"credits_charged,omitempty" table:"credits_charged"`
+	SubmittedAt    string `json:"submitted_at,omitempty" table:"submitted_at"`
+	CreatedAt      string `json:"created_at,omitempty" table:"created_at"`
+	UpdatedAt      string `json:"updated_at,omitempty" table:"updated_at"`
+	// Fields from /usable endpoint
+	IsDefault bool   `json:"is_default,omitempty" table:"is_default"`
+	Type      string `json:"type,omitempty" table:"type"`
+	Provider  string `json:"provider,omitempty" table:"provider"`
+	Description string `json:"description,omitempty" table:"description"`
 }
 
 type CreateSenderIDRequest struct {
