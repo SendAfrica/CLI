@@ -1,3 +1,13 @@
+// Package cmd defines all Cobra commands for the SendAfrica CLI.
+//
+// Each subcommand file (auth.go, sms.go, contacts.go, etc.) implements a
+// group of API endpoints. The rootCmd wires them together and resolves
+// configuration (credentials, API URL, output format) before any command runs.
+//
+// Common helpers:
+//   - requireAuth() / apiClient() — check credentials and build a client
+//   - printer() — returns an output.Printer for the resolved format
+//   - decodeData() / decodePaginated() — unwrap the API response envelope
 package cmd
 
 import (
