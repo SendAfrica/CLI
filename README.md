@@ -275,7 +275,7 @@ internal/
 │   ├── sms.go                  — sms-send, sms-bulk, sms-logs, credits
 │   ├── contacts.go             — contact lists, contacts, Google sync, CSV import/export
 │   ├── campaigns.go            — campaign CRUD, scheduling, recipients
-│   ├── payments.go             — payment initiation, vouchers
+	│   ├── payments.go             — voucher top-ups and payer OTP flow
 │   ├── senderids.go            — sender ID requirements, creation, listing
 │   ├── notifications.go        — notification CRUD, read/unread
 │   ├── public.go               — health, packages, templates, rates (no auth)
