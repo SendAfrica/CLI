@@ -56,7 +56,6 @@ The SendAfrica API supports two credential types. Different endpoints accept dif
 | `POST /v1/auth/change-password` | — | Yes |
 | `POST /v1/contact-lists` | Yes | Yes |
 | `GET /v1/campaigns` | Yes | Yes |
-| `POST /v1/payments` | Yes | Yes |
 
 If both API key and JWT are configured, the CLI sends the API key (as `X-API-Key`). If only a JWT is configured, it sends `Authorization: Bearer <token>`.
 
@@ -86,8 +85,9 @@ This means you can provide credentials the most convenient way for each context 
 
 | Command | Endpoint | Auth |
 |---|---|---|
-| `sendafrica register --email ... --password ... --name ...` | `POST /v1/auth/register` | None |
+| `sendafrica register --email ... --password ... --first-name ... --last-name ...` | `POST /v1/auth/register` | None |
 | `sendafrica login --email ... --password ...` | `POST /v1/auth/login` | None |
+| `sendafrica refresh` | `POST /v1/auth/refresh` | Refresh token |
 | `sendafrica logout` | `POST /v1/auth/logout` | JWT |
 | `sendafrica verify-email --email ... --otp ...` | `POST /v1/auth/verify-email` | None |
 | `sendafrica send-verification-email --email ...` | `POST /v1/auth/send-verification-email` | None |
@@ -162,20 +162,47 @@ This means you can provide credentials the most convenient way for each context 
 | `sendafrica campaigns schedule [id] [listId]` | `POST /v1/campaigns/{id}/schedule` |
 | `sendafrica campaigns recipients [id]` | `GET /v1/campaigns/{id}/recipients` |
 
-### Payments
-
-| Command | Endpoint |
-|---|---|
-| `sendafrica payments initiate [packageId]` | `POST /v1/payments/` |
-
 ### Vouchers
 
 | Command | Endpoint |
 |---|---|
 | `sendafrica vouchers rate` | `GET /v1/vouchers/rate` |
 | `sendafrica vouchers purchase [amount]` | `POST /v1/vouchers/` |
+| `sendafrica vouchers send-otp [phone]` | `POST /v1/vouchers/otp/send` |
+| `sendafrica vouchers verify-otp [phone] [otp]` | `POST /v1/vouchers/otp/verify` |
 
 ### Sender IDs
+
+Yes. Authenticated users can submit sender-ID requests from the CLI. First inspect
+the provider requirements, then submit the request. Registration is free; the
+request remains pending until it is reviewed and approved.
+
+```bash
+sendafrica sender-ids requirements
+sendafrica sender-ids create \
+  --name MYBRAND \
+  --country TZ \
+  --purpose Transactional \
+  --sample-message "Your verification code is 123456. It expires in ten minutes." \
+  --documents-file documents.json
+```
+
+`documents.json` must be a JSON array using requirement UIDs returned by
+`sender-ids requirements`:
+
+```json
+[
+  {
+    "requirement_uid": "req-doc-1",
+    "filename": "license.pdf",
+    "content_base64": "JVBERi0xLjRN..."
+  }
+]
+```
+
+For requests without documents, omit the documents flags. The sample message
+must be a real example between 50 and 500 characters, and the sender ID must
+use the allowed characters shown by `sender-ids requirements`.
 
 | Command | Endpoint |
 |---|---|
@@ -184,6 +211,7 @@ This means you can provide credentials the most convenient way for each context 
 | `sendafrica sender-ids list` | `GET /v1/sender-ids` |
 | `sendafrica sender-ids create --name ... --purpose ... --sample-message ...` | `POST /v1/sender-ids` |
 | `sendafrica sender-ids get [id]` | `GET /v1/sender-ids/{id}` |
+| `sendafrica sender-ids set-default [id]` | `PUT /v1/sender-ids/default` |
 
 ### Notifications
 

@@ -24,9 +24,12 @@ func (p PaginatedResponse) ExtractItems(target interface{}) error {
 // Auth types
 
 type RegisterRequest struct {
-	Email    string `json:"email"`
-	Password string `json:"password"`
-	Name     string `json:"name,omitempty"`
+	Email       string `json:"email"`
+	Password    string `json:"password"`
+	FirstName   string `json:"first_name"`
+	LastName    string `json:"last_name"`
+	CompanyName string `json:"company_name,omitempty"`
+	Phone       string `json:"phone,omitempty"`
 }
 
 type LoginRequest struct {
@@ -35,9 +38,10 @@ type LoginRequest struct {
 }
 
 type LoginResponse struct {
-	AccessToken string `json:"access_token"`
-	TokenType   string `json:"token_type"`
-	ExpiresIn   int    `json:"expires_in"`
+	AccessToken  string `json:"access_token"`
+	RefreshToken string `json:"refresh_token"`
+	TokenType    string `json:"token_type"`
+	ExpiresIn    int64  `json:"expires_in"`
 }
 
 type SendVerificationEmailRequest struct {
@@ -64,9 +68,10 @@ type RefreshTokenRequest struct {
 }
 
 type RefreshTokenResponse struct {
-	AccessToken string `json:"access_token"`
-	TokenType   string `json:"token_type"`
-	ExpiresIn   int    `json:"expires_in"`
+	AccessToken  string `json:"access_token"`
+	RefreshToken string `json:"refresh_token,omitempty"`
+	TokenType    string `json:"token_type"`
+	ExpiresIn    int64  `json:"expires_in"`
 }
 
 type ChangePasswordRequest struct {
@@ -138,15 +143,15 @@ type SMSBulkSendRequest struct {
 }
 
 type SMSLog struct {
-	ID           string `json:"id" table:"id"`
-	Status       string `json:"status" table:"status"`
-	To           string `json:"to_phone" table:"to"`
-	From         string `json:"from_id" table:"from"`
-	Message      string `json:"message" table:"message"`
-	Cost         int    `json:"credits_used" table:"cost"`
-	DeliveredAt  string `json:"delivered_at,omitempty" table:"delivered_at"`
-	GatewayCode  string `json:"gateway_code,omitempty" table:"gateway_code"`
-	CreatedAt    string `json:"created_at" table:"created_at"`
+	ID          string `json:"id" table:"id"`
+	Status      string `json:"status" table:"status"`
+	To          string `json:"to_phone" table:"to"`
+	From        string `json:"from_id" table:"from"`
+	Message     string `json:"message" table:"message"`
+	Cost        int    `json:"credits_used" table:"cost"`
+	DeliveredAt string `json:"delivered_at,omitempty" table:"delivered_at"`
+	GatewayCode string `json:"gateway_code,omitempty" table:"gateway_code"`
+	CreatedAt   string `json:"created_at" table:"created_at"`
 }
 
 type SMSLogsResponse struct {
@@ -224,8 +229,8 @@ type UpdateContactListRequest struct {
 }
 
 type DuplicateCheckResponse struct {
-	DuplicateCount    int `json:"duplicate_count" table:"duplicate_count"`
-	ListContactCount  int `json:"list_contact_count" table:"list_contact_count"`
+	DuplicateCount   int `json:"duplicate_count" table:"duplicate_count"`
+	ListContactCount int `json:"list_contact_count" table:"list_contact_count"`
 }
 
 type Contact struct {
@@ -337,18 +342,25 @@ type PaymentResponse struct {
 // Vouchers types
 
 type VoucherRateResponse struct {
-	MinAmountTZS int            `json:"min_amount_tzs" table:"min_amount_tzs"`
+	MinAmountTZS int           `json:"min_amount_tzs" table:"min_amount_tzs"`
 	Tiers        []VoucherTier `json:"tiers" table:"-"`
 }
 
 type VoucherTier struct {
-	MaxAmountTZS      int `json:"max_amount_tzs" table:"max_amount_tzs"`
-	RateTZSPerCredit  int `json:"rate_tzs_per_credit" table:"rate_tzs_per_credit"`
+	MaxAmountTZS     int `json:"max_amount_tzs" table:"max_amount_tzs"`
+	RateTZSPerCredit int `json:"rate_tzs_per_credit" table:"rate_tzs_per_credit"`
 }
 
 type PurchaseVoucherRequest struct {
+	Provider string `json:"provider,omitempty"`
+	Phone    string `json:"phone,omitempty"`
 	Amount   int    `json:"amount"`
 	Currency string `json:"currency,omitempty"`
+}
+
+type DeclaredPhoneOTPRequest struct {
+	Phone string `json:"phone"`
+	OTP   string `json:"otp,omitempty"`
 }
 
 type PurchaseVoucherResponse struct {
@@ -385,22 +397,22 @@ type SenderIDDocument struct {
 }
 
 type SenderID struct {
-	ID             string `json:"id,omitempty" table:"id"`
-	Name           string `json:"name" table:"name"`
-	Country        string `json:"country,omitempty" table:"country"`
-	Purpose        string `json:"purpose,omitempty" table:"purpose"`
-	SampleMessage  string `json:"sample_message,omitempty" table:"sample_message"`
-	Status         string `json:"status,omitempty" table:"status"`
-	IsUsable       bool   `json:"is_usable,omitempty" table:"is_usable"`
+	ID              string `json:"id,omitempty" table:"id"`
+	Name            string `json:"name" table:"name"`
+	Country         string `json:"country,omitempty" table:"country"`
+	Purpose         string `json:"purpose,omitempty" table:"purpose"`
+	SampleMessage   string `json:"sample_message,omitempty" table:"sample_message"`
+	Status          string `json:"status,omitempty" table:"status"`
+	IsUsable        bool   `json:"is_usable,omitempty" table:"is_usable"`
 	RejectionReason string `json:"rejection_reason,omitempty" table:"rejection_reason"`
-	CreditsCharged int    `json:"credits_charged,omitempty" table:"credits_charged"`
-	SubmittedAt    string `json:"submitted_at,omitempty" table:"submitted_at"`
-	CreatedAt      string `json:"created_at,omitempty" table:"created_at"`
-	UpdatedAt      string `json:"updated_at,omitempty" table:"updated_at"`
+	CreditsCharged  int    `json:"credits_charged,omitempty" table:"credits_charged"`
+	SubmittedAt     string `json:"submitted_at,omitempty" table:"submitted_at"`
+	CreatedAt       string `json:"created_at,omitempty" table:"created_at"`
+	UpdatedAt       string `json:"updated_at,omitempty" table:"updated_at"`
 	// Fields from /usable endpoint
-	IsDefault bool   `json:"is_default,omitempty" table:"is_default"`
-	Type      string `json:"type,omitempty" table:"type"`
-	Provider  string `json:"provider,omitempty" table:"provider"`
+	IsDefault   bool   `json:"is_default,omitempty" table:"is_default"`
+	Type        string `json:"type,omitempty" table:"type"`
+	Provider    string `json:"provider,omitempty" table:"provider"`
 	Description string `json:"description,omitempty" table:"description"`
 }
 

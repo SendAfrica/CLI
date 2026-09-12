@@ -59,14 +59,16 @@ var loginCmd = &cobra.Command{
 			}
 			if p, ok := cfg.Profiles[profileName]; ok {
 				p.JWTToken = resp.AccessToken
+				p.RefreshToken = resp.RefreshToken
 				if p.APIURL == "" {
 					p.APIURL = apiURL
 				}
 				cfg.Profiles[profileName] = p
 			} else {
 				cfg.Profiles[profileName] = config.Profile{
-					APIURL:   apiURL,
-					JWTToken: resp.AccessToken,
+					APIURL:       apiURL,
+					JWTToken:     resp.AccessToken,
+					RefreshToken: resp.RefreshToken,
 				}
 			}
 			if saveErr := config.Save(cfg); saveErr != nil {
@@ -118,6 +120,47 @@ var logoutCmd = &cobra.Command{
 	},
 }
 
+var refreshCmd = &cobra.Command{
+	Use:   "refresh",
+	Short: "Refresh the saved JWT access token",
+	Args:  cobra.NoArgs,
+	RunE: func(cmd *cobra.Command, args []string) error {
+		if resolvedCfg == nil || resolvedCfg.ProfileName == "" {
+			return fmt.Errorf("no active profile")
+		}
+		cfg, err := config.Load()
+		if err != nil {
+			return err
+		}
+		profile := cfg.Profiles[resolvedCfg.ProfileName]
+		refreshToken, _ := cmd.Flags().GetString("refresh-token")
+		if refreshToken == "" {
+			refreshToken = profile.RefreshToken
+		}
+		if refreshToken == "" {
+			return fmt.Errorf("no refresh token available; log in again with --save")
+		}
+		c := client.New(resolvedCfg.APIURL, "", "")
+		data, err := c.Do(client.RequestOpts{Method: "POST", Path: "/v1/auth/refresh", Body: api.RefreshTokenRequest{RefreshToken: refreshToken}})
+		if err != nil {
+			return err
+		}
+		var resp api.RefreshTokenResponse
+		if err := decodeData(data, &resp); err != nil {
+			return err
+		}
+		profile.JWTToken = resp.AccessToken
+		if resp.RefreshToken != "" {
+			profile.RefreshToken = resp.RefreshToken
+		}
+		cfg.Profiles[resolvedCfg.ProfileName] = profile
+		if err := config.Save(cfg); err != nil {
+			return err
+		}
+		return printer().Print(resp)
+	},
+}
+
 var registerCmd = &cobra.Command{
 	Use:   "register",
 	Short: "Register a new account",
@@ -125,10 +168,13 @@ var registerCmd = &cobra.Command{
 	RunE: func(cmd *cobra.Command, args []string) error {
 		email, _ := cmd.Flags().GetString("email")
 		password, _ := cmd.Flags().GetString("password")
-		name, _ := cmd.Flags().GetString("name")
+		firstName, _ := cmd.Flags().GetString("first-name")
+		lastName, _ := cmd.Flags().GetString("last-name")
+		companyName, _ := cmd.Flags().GetString("company-name")
+		phone, _ := cmd.Flags().GetString("phone")
 
 		c := client.New(config.DefaultAPIURL, "", "")
-		req := api.RegisterRequest{Email: email, Password: password, Name: name}
+		req := api.RegisterRequest{Email: email, Password: password, FirstName: firstName, LastName: lastName, CompanyName: companyName, Phone: phone}
 		data, err := c.Do(client.RequestOpts{
 			Method: "POST",
 			Path:   "/v1/auth/register",
@@ -467,10 +513,14 @@ func init() {
 	loginCmd.Flags().Bool("print-token", false, "print the JWT token to stdout")
 	loginCmd.Flags().Bool("save", false, "save JWT to current profile")
 	loginCmd.Flags().String("api-url", "", "API URL override")
+	refreshCmd.Flags().String("refresh-token", "", "refresh token override")
 
 	registerCmd.Flags().String("email", "", "account email")
 	registerCmd.Flags().String("password", "", "account password")
-	registerCmd.Flags().String("name", "", "full name")
+	registerCmd.Flags().String("first-name", "", "first name")
+	registerCmd.Flags().String("last-name", "", "last name")
+	registerCmd.Flags().String("company-name", "", "company name")
+	registerCmd.Flags().String("phone", "", "phone number in E.164 format")
 
 	verifyEmailCmd.Flags().String("email", "", "account email")
 	verifyEmailCmd.Flags().String("otp", "", "verification OTP")
@@ -499,6 +549,8 @@ func init() {
 	_ = loginCmd.MarkFlagRequired("password")
 	_ = registerCmd.MarkFlagRequired("email")
 	_ = registerCmd.MarkFlagRequired("password")
+	_ = registerCmd.MarkFlagRequired("first-name")
+	_ = registerCmd.MarkFlagRequired("last-name")
 	_ = verifyEmailCmd.MarkFlagRequired("email")
 	_ = verifyEmailCmd.MarkFlagRequired("otp")
 	_ = sendVerificationEmailCmd.MarkFlagRequired("email")

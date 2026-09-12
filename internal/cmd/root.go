@@ -76,6 +76,7 @@ func init() {
 
 	// Auth endpoints
 	rootCmd.AddCommand(loginCmd)
+	rootCmd.AddCommand(refreshCmd)
 	rootCmd.AddCommand(logoutCmd)
 	rootCmd.AddCommand(registerCmd)
 	rootCmd.AddCommand(verifyEmailCmd)
@@ -128,13 +129,11 @@ func init() {
 	campaignsCmd.AddCommand(campaignsRecipientsCmd)
 	rootCmd.AddCommand(campaignsCmd)
 
-	// Payments endpoints
-	paymentsCmd.AddCommand(paymentsInitiateCmd)
-	rootCmd.AddCommand(paymentsCmd)
-
 	// Vouchers endpoints
 	vouchersCmd.AddCommand(vouchersRateCmd)
 	vouchersCmd.AddCommand(vouchersPurchaseCmd)
+	vouchersCmd.AddCommand(vouchersSendOTPCmd)
+	vouchersCmd.AddCommand(vouchersVerifyOTPCmd)
 	rootCmd.AddCommand(vouchersCmd)
 
 	// Sender IDs endpoints
@@ -143,6 +142,7 @@ func init() {
 	senderIDsCmd.AddCommand(senderIDsListCmd)
 	senderIDsCmd.AddCommand(senderIDsCreateCmd)
 	senderIDsCmd.AddCommand(senderIDsGetCmd)
+	senderIDsCmd.AddCommand(senderIDsDefaultCmd)
 	rootCmd.AddCommand(senderIDsCmd)
 
 	// Notifications endpoints

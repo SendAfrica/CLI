@@ -34,9 +34,10 @@ const (
 
 // Profile holds the credentials and endpoint for a single SendAfrica account.
 type Profile struct {
-	APIURL   string `json:"api_url"`
-	APIKey   string `json:"api_key"`
-	JWTToken string `json:"jwt_token"`
+	APIURL       string `json:"api_url"`
+	APIKey       string `json:"api_key"`
+	JWTToken     string `json:"jwt_token"`
+	RefreshToken string `json:"refresh_token,omitempty"`
 }
 
 // Config is the on-disk representation of all profiles.

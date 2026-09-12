@@ -1,6 +1,9 @@
 package cmd
 
 import (
+	"fmt"
+	"os"
+
 	"github.com/spf13/cobra"
 
 	"github.com/cameltech/sendafrica-cli/internal/api"
@@ -107,6 +110,17 @@ var senderIDsCreateCmd = &cobra.Command{
 		req.Purpose, _ = cmd.Flags().GetString("purpose")
 		req.SampleMessage, _ = cmd.Flags().GetString("sample-message")
 		docsJSON, _ := cmd.Flags().GetString("documents")
+		documentsFile, _ := cmd.Flags().GetString("documents-file")
+		if docsJSON != "" && documentsFile != "" {
+			return fmt.Errorf("use either --documents or --documents-file, not both")
+		}
+		if documentsFile != "" {
+			contents, err := os.ReadFile(documentsFile)
+			if err != nil {
+				return fmt.Errorf("reading documents file: %w", err)
+			}
+			docsJSON = string(contents)
+		}
 		if docsJSON != "" {
 			if err := jsonUnmarshal([]byte(docsJSON), &req.Documents); err != nil {
 				return err
@@ -156,6 +170,21 @@ var senderIDsGetCmd = &cobra.Command{
 	},
 }
 
+var senderIDsDefaultCmd = &cobra.Command{Use: "set-default [id]", Short: "Set the account default sender ID", Args: cobra.ExactArgs(1), RunE: func(cmd *cobra.Command, args []string) error {
+	if err := requireAuth(); err != nil {
+		return err
+	}
+	c, err := apiClient()
+	if err != nil {
+		return err
+	}
+	data, err := c.Do(client.RequestOpts{Method: "PUT", Path: "/v1/sender-ids/default", Body: map[string]string{"sender_id": args[0]}})
+	if err != nil {
+		return err
+	}
+	return printer().Print(rawMessage(data))
+}}
+
 func init() {
 	senderIDsUsableCmd.Flags().String("provider", "", "filter by provider: swala or africastalking")
 	senderIDsCreateCmd.Flags().String("name", "", "sender ID name (3-11 alphanumeric chars)")
@@ -163,6 +192,7 @@ func init() {
 	senderIDsCreateCmd.Flags().String("purpose", "", "purpose (e.g. Transactional, Promotional)")
 	senderIDsCreateCmd.Flags().String("sample-message", "", "sample message body (50-500 chars)")
 	senderIDsCreateCmd.Flags().String("documents", "", "JSON array of document objects")
+	senderIDsCreateCmd.Flags().String("documents-file", "", "path to a JSON file containing document objects")
 	_ = senderIDsCreateCmd.MarkFlagRequired("name")
 	_ = senderIDsCreateCmd.MarkFlagRequired("purpose")
 	_ = senderIDsCreateCmd.MarkFlagRequired("sample-message")
